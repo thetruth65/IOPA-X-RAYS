@@ -1,0 +1,14 @@
+pydicom
+pandas
+numpy
+torch
+matplotlib
+scikit-learn
+scikit-image
+python==3.10
+xgboost
+optuna
+opencv-python
+pylibjpeg 
+pylibjpeg-libjpeg 
+pylibjpeg-openjpeg
