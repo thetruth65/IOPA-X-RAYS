@@ -36,17 +36,17 @@ ML/Modeling:
 ## 4. Basic Preprocessing
 
 Step one: load and view the images. Then I applied:
-- **Rescaling**  
-- **Windowing**  
-- **Normalization**  
+- **Rescaling** – Resizes pixel values to a common range.
+- **Windowing** – Focuses on specific intensity ranges, enhancing relevant features.
+- **Normalization** – Scales intensity to [0, 1] to stabilize model input and output.
 
 This brings every image to a similar scale so comparisons are fair.
 
 I also calculated non-reference metrics like:
-- Brightness
-- Sharpness
-- Contrast
-- Noise
+- Brightness – Measures overall lightness of an image.
+- Sharpness – Indicates edge clarity and detail visibility.
+- Contrast – Measures intensity difference between regions.
+- Noise – Quantifies random pixel variations.
 
 And yep, I visualized their intensity vs. frequency histograms. There was a clear imbalance in distributions (since real medical images are all over the place in terms of exposure).
 
@@ -56,9 +56,9 @@ And yep, I visualized their intensity vs. frequency histograms. There was a clea
 
 Next, I tried out classic image enhancement methods:
 
-- **Histogram Equalization** – stretches the intensity values to boost contrast.
-- **Unsharp Masking** – adds clarity by enhancing edges.
-- **Bilateral Filtering** – denoises while keeping edges crisp.
+- **Histogram Equalization** – Redistributes intensity to enhance global contrast.
+- **Unsharp Masking** – Highlights edges by subtracting a blurred copy from the original.
+- **Bilateral Filtering** – Smooths while preserving edges using spatial and intensity differences.
 
 I tested these one-by-one on each image, then applied them as a full pipeline. I’ve added comparisons (images + histograms) to show what changed.
 
@@ -82,11 +82,12 @@ This is where things get a bit smarter.
 Instead of hardcoding enhancement values, I let the system **predict the best parameters** for each image. Here’s how I did it:
 
 1. I generated 50 artificial data samples based on the real images’ metric stats (mean, std, min, max).
-2. Trained a **Random Forest Regressor** using Optuna to tune it.
+2. Trained a **Random Forest Regressor** using Optuna to tune it.  
+   *(Random Forest helps capture nonlinear relationships; Optuna finds the best hyperparameters.)*
 3. Predicted parameters for:
-   - `clip_limit`, `tile_grid_size` (CLAHE)
-   - `sigma_color`, `sigma_space` (Bilateral Filter)
-   - `sharpen_weight` (Unsharp Mask)
+   - `clip_limit`, `tile_grid_size` (CLAHE) – controls local contrast enhancement in histograms.
+   - `sigma_color`, `sigma_space` (Bilateral Filter) – balances spatial smoothing with edge protection.
+   - `sharpen_weight` (Unsharp Mask) – adjusts how strongly edges are boosted.
 4. Ran those enhancements with the predicted settings.
 
 This made each image get its own optimal enhancement – sort of like a “personalized filter.”
@@ -98,14 +99,14 @@ This made each image get its own optimal enhancement – sort of like a “perso
 I used both **non-reference** (no ground truth needed) and **reference** (compared to original) metrics.
 
 ### Non-Reference:
-- Brightness
-- Sharpness
-- Contrast
-- Noise
+- Brightness – average pixel intensity.
+- Sharpness – variance of Laplacian or similar edge estimator.
+- Contrast – standard deviation of intensities.
+- Noise – measured using difference between smoothed and original images.
 
 ### Reference:
-- **PSNR (Peak Signal-to-Noise Ratio)**: Higher is better, less noise.
-- **SSIM (Structural Similarity Index)**: Closer to 1 = more similar to original.
+- **PSNR (Peak Signal-to-Noise Ratio)** – Quantifies reconstruction quality (higher = better).
+- **SSIM (Structural Similarity Index)** – Measures perceptual similarity based on structure, luminance, and contrast.
 
 All metrics are saved as a CSV in the `Comparison/` folder.
 
@@ -138,23 +139,17 @@ Alright, here’s the honest bit:
 This part was fun. I trained a **PyTorch autoencoder** to remove noise from X-ray images.
 
 Steps:
-- I made noisy versions of the clean images (`Synthetic_Data/`) using Gaussian noise.
+- I made noisy versions of the clean images (`Synthetic_Data/`) using Gaussian noise.  
+  *(Gaussian noise simulates realistic sensor or transmission errors.)*
 - Resized them to `128x128` for fast training.
-- Built a basic encoder-decoder model (nothing fancy).
+- Built a basic encoder-decoder model (nothing fancy).  
+  *(Encoder compresses image to latent features; decoder reconstructs it.)*
 - Trained it and saved the denoised outputs to `Enhanced_Images/`.
 
 ### Thoughts:
 - Visually better in many cases, especially on close inspection.
 - Would get *way* better with:
-  - Patch-wise learning
+  - **Patch-wise learning** – splits large images into smaller patches for training, helping the model focus on local structures and reduce memory load.
   - More data
-  - Bigger architectures (like transformers or modern denoising nets)
-
----
-
-## Final Thoughts
-
-This project builds a solid, easy-to-read pipeline for preprocessing and enhancing medical X-rays. Whether you're trying static methods, tuning adaptively, or running ML models like autoencoders—everything's modular, scalable, and open to improvement.
-
-If you're reading this to learn or build on it—go for it. Ping me if you wanna collaborate or brainstorm improvements!
+  - Bigger architectures (like transformers or modern denoising nets; the attention mechanisms of theirs are mostly blindly reliable)
 
