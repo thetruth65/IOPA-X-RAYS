@@ -82,7 +82,7 @@ This is where things get a bit smarter.
 Instead of hardcoding enhancement values, I let the system **predict the best parameters** for each image. Here’s how I did it:
 
 1. I generated 50 artificial data samples based on the real images’ metric stats (mean, std, min, max).
-2. Trained a **Random Forest Regressor** using Optuna to tune it.  
+2. Trained a **Random Forest Regressor** on the optimised results from Optuna to tune the target parameters of the techniques.  
    *(Random Forest helps capture nonlinear relationships; Optuna finds the best hyperparameters.)*
 3. Predicted parameters for:
    - `clip_limit`, `tile_grid_size` (CLAHE) – controls local contrast enhancement in histograms.
